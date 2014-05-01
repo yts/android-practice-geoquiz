@@ -16,6 +16,7 @@ import android.widget.Toast;
 public class QuizActivity extends ActionBarActivity {
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private static final String KEY_CHEATER = "cheater";
 
     private Button mTrueButton;
     private Button mFalseButton;
@@ -34,12 +35,16 @@ public class QuizActivity extends ActionBarActivity {
 
     private int mCurrentIndex;
     private boolean mIsCheater;
+    private boolean[] mIsCheaterArray;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "OnCreate(Bundle) called");
         setContentView(R.layout.activity_quiz);
+
+        mIsCheaterArray = new boolean[mQuestionBank.length];
 
         mTrueButton = (Button) findViewById(R.id.true_button);
         mTrueButton.setOnClickListener(new View.OnClickListener() {
@@ -104,6 +109,10 @@ public class QuizActivity extends ActionBarActivity {
 
         if (savedInstanceState != null){
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+            mIsCheaterArray = savedInstanceState.getBooleanArray(KEY_CHEATER);
+            if (mIsCheaterArray == null){
+                mIsCheaterArray = new boolean[mQuestionBank.length];
+            }
         }
 
         updateQuestion();
@@ -131,24 +140,26 @@ public class QuizActivity extends ActionBarActivity {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle savedInstanceState){
+    protected void onSaveInstanceState(Bundle savedInstanceState){
+        super.onSaveInstanceState(savedInstanceState);
         Log.i(TAG, "onSaveInstanceState");
         savedInstanceState.putInt(KEY_INDEX, mCurrentIndex);
+        savedInstanceState.putBooleanArray(KEY_CHEATER, mIsCheaterArray);
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (data == null){
             return;
         }
-        mIsCheater = data.getBooleanExtra(CheatActivity.EXTRA_ANSWER_SHOWN, false);
+        mIsCheaterArray[mCurrentIndex] = data.getBooleanExtra(CheatActivity.EXTRA_ANSWER_SHOWN, false);
 //        super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void updateToNextQuestion()
     {
         mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
-        mIsCheater = false;
         updateQuestion();
     }
 
@@ -164,7 +175,7 @@ public class QuizActivity extends ActionBarActivity {
 
         int messageResId = 0;
 
-        if (mIsCheater){
+        if (mIsCheaterArray[mCurrentIndex]){
             messageResId = R.string.judgement_toast;
         }
         else {
